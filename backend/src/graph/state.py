@@ -21,4 +21,4 @@ class VideoAudioState(TypedDict):
 
     # Ingestion and extraction data
     local_file_path: Optional[str]
-    video_metadata: Dict[str,Any]
+    video_metadata: Dict[str,Any] # {"duration": 120, "resolution": "1920x1080", "format": "mp4"}
