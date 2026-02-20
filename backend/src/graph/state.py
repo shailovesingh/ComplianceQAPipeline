@@ -38,4 +38,5 @@ class VideoAudioState(TypedDict):
 
     # system observability
     # errors : API timeouts, processing errors, etc.
+    # list of system level crashes
     errors : Annotated[List[str], operator.add]
