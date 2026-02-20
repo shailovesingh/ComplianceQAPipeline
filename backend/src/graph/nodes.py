@@ -20,7 +20,7 @@ logger = logging.getLogger("brand-gradian")
 logging.basicConfig(level=logging.INFO)
 
 # Node 1 : Indexer
-
+# function responsible for converting video to text
 def index_video_node(state:VideoAuditState) -> Dict[str, Any]:
     '''
     Downloads the youtube video from the url Uploads to the Azure Video Indexer extracts the insights
@@ -125,4 +125,34 @@ def audio_content_node(state:VideoAuditState) -> Dict[str, Any]:
     "status": "FAIL"
     "final_report" : "Summary of findings...."
     }}
+    if no violations are found, set "status" to "PASS" and "compliance_results" to [].
+    }}
     """
+    user_message = f"""
+    VIDEO_METADATA: {state.get('video_metadata', {})}
+    TRANSCRIPT: {transcript}
+    ON-SCREEN TEXT (OCR : {ocr_text}
+    """
+
+    try:
+        response = llm.invoke([
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=user_message)
+        ])
+        content = response.content
+        if "```" in content:
+            content =  re.search(r"```(?:json)?(.?)```", content, re.DOTALL).group(1)
+        audit_data = json.loads(content.strip())
+        return {
+            "compliance_results": audit_data.get("compliance_results",[]),
+            "final_status": audit_data.get("status", "FAIL"),
+            "final_report": audit_data.get("final_report", "No report generated")
+        }
+    except Exception as e:
+        logger.error(f"system Error in Auditor Node : {str(e)}")
+        # logging the raw response
+        logger.error(f"Raw LLM response: {response.content if 'response' in locals() else 'None'}")
+        return {
+            "errors": [str(e)],
+            "final_status": ""
+        }
