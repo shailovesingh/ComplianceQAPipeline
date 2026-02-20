@@ -11,7 +11,7 @@ class ComplianceIssue(TypedDict):
 
 # define the global graph state
 # This defines the state that gets passed aroind in the agentic workflow
-class VideoAudioState(TypedDict):
+class VideoAuditState(TypedDict):
     '''
     Defines the data schema for langgraph execution content
     Main container : holds all the information about the audit
