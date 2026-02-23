@@ -112,4 +112,26 @@ class VideoIndexerService:
             elif state == "Failed":
                 raise Exception("Video Indexing Failed in Azure")
             elif state == "Quarantined":
-                raise Exception
+                raise Exception("Video Quarantined (COpyright / COntent Policy Violation)")
+            logger.info(f"Status {state} ..... waiting 30s")
+            time.sleep(30)
+
+    def extract_data(self,vi_json):
+        'parses teh JSON into our state format'
+        transcript_lines = []
+        for v in vi_json.get("videos", []):
+            for insight in v.get("insights", {}).get("transcript",[]):
+                transcript_lines.append(insight.get("text"))
+
+        ocr_lines = []
+        for v in vi_json.get("videos"[]):
+            for insight in v.get("insights", {}).get("ocr",[]):
+                ocr_lines.append(insight.get("text"))
+        return{
+            "transcript" : "".join(transcript_lines),
+            "ocr_text" : ocr_lines,
+            "video_metadata" : {
+                "duration" : vi_json.get("summarizedInsights", {}).get("duration"),
+                "platform" : "youtube"
+            }
+        }
