@@ -26,5 +26,15 @@ def create_graph():
     # add the nodes
     workflow.add_node("indexer", index_video_node)
     workflow.add_node("auditor", audio_content_node)
-    # define the entry point
-    
+    # define the entry point: Indexer
+    workflow.set_entry_point("indexer")
+    # define the edges
+    workflow.add_edge("indexer", "auditor")
+    # Once the audit is complete, the workflow ends
+    workflow.add_edge("auditor", END)
+    # Compile the graph
+    app = workflow.compile()
+    return app
+
+## expose this runnable app
+app = create_graph()
