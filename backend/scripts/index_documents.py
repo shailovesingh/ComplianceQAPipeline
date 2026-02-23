@@ -88,3 +88,48 @@ def index_docs():
     pdf_files = glob.glob(os.path.join(data_folder), "*.pdf")
     if not pdf_files:
         logger.warning(f"No PDFs found in {data_folder}. Please add files.")
+    logger.info(f"Found {len(pdf_files)} PDFs to process : {[os.path.basename(f) for f in pdf_files]}")
+
+    all_splits = []
+
+    # process each pdf
+    for pdf_path in pdf_files:
+        try:
+            logger.info(f"Loading:{os.path.basename(pdf_path)}.........")
+            loader = PyPDFLoader(pdf_path)
+            raw_docs = loader.load()
+
+            # Chunking strategy
+            text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size = 1000,
+                chunk_overlap = 200
+            )
+            splits = text_splitter.split_documents(raw_docs)
+            for split in splits:
+                split.metadata["source"] = os.path.basename(pdf_path)
+
+            all_splits.extend(splits)
+            logger.info(f"Split into {len(splits)} chunks.")
+
+        except Exception as e:
+            logger.error(f"Failed to process {pdf_path} : {e}")
+
+        # Upload to Azure
+        if all_splits:
+            logger.info(f"Uploading {len(all_splits)} chunks to Azure Ai Search Index '{index_name}'")
+            try:
+                # Azure search accepts batches automatically via this method 
+                vector_store.add_documents(documents = all_splits)
+                logger.info("="*60)
+                logger.info("Indexing Complete! knowledge Base is ready...")
+                logger.info(f"Total chunks indexed : {len(all_splits)}")
+                logger.info("="*60)
+            except Exception as e:
+                logger.error(f"Failed to upload the documents to Azure Search : {e}")
+                logger.error("Please check the Azure Search configuration and try again")
+
+            else:
+                logger.warning("No documents were processed.")
+
+if __name__ = "__main__":
+    index_docs()
